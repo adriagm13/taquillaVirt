@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class Espectaculo(models.Model):
     nombre_espectaculo = models.CharField(max_length=100, primary_key=True)
     descripcion = models.TextField()
@@ -8,7 +9,6 @@ class Espectaculo(models.Model):
 class Recinto(models.Model):
     nombre_recinto = models.CharField(max_length=100, primary_key=True)
     direccion = models.CharField(max_length=200)
-    evento = models.ForeignKey('Evento', on_delete=models.CASCADE)
 
     
 class Evento(models.Model):
@@ -48,6 +48,24 @@ class Usuario(models.Model):
     tipo_usuario = models.CharField(max_length=1, choices=TIPO_USUARIO_CHOICES, primary_key=True)
     descripcion = models.TextField()
 
+    def create_descripcion(self):
+        if self.tipo_usuario == 'J':
+            return 'Jubilado'
+        elif self.tipo_usuario == 'A':
+            return 'Adulto'
+        elif self.tipo_usuario == 'I':
+            return 'Infantil'
+        elif self.tipo_usuario == 'P':
+            return 'Parado'
+        elif self.tipo_usuario == 'B':
+            return 'Bebé'
+        else:
+            return 'Usuario no identificado'
+        
+    def save(self, *args, **kwargs):
+        self.descripcion = self.create_descripcion()
+        super().save(*args, **kwargs)
+
 class Cliente(models.Model):
     id_cliente = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=100)
@@ -76,23 +94,30 @@ class LocalidadesOfertadas(models.Model):
     grada = models.ForeignKey(Grada, on_delete=models.CASCADE)
     localidad = models.ForeignKey(Localidad, on_delete=models.CASCADE)
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
-    numeracion = models.IntegerField()
     precio = models.DecimalField(max_digits=5, decimal_places=2)
     reserva = models.ForeignKey(Reserva, on_delete=models.CASCADE) 
     
     class Meta:
-        primary_key = models.ForeignKeyConstraint(['grada', 'localidad', 'usuario'], name='pk_localidades_ofertadas')
-    
+            constraints = [
+                models.UniqueConstraint(fields=['grada', 'localidad', 'usuario'], name='unique_grada_localidad_usuario')
+            ]
+
     def save(self, *args, **kwargs):
         self.precio = self.calcular_precio()
         super().save(*args, **kwargs)
 
     def calcular_precio(self):
-        # Implementa aquí la lógica para calcular el precio según la grada, localidad y tipo de usuario
-        # Puedes acceder a los atributos del objeto como self.grada, self.localidad, self.tipo_usuario, etc.
-        # Devuelve el precio calculado
-        # Este es solo un ejemplo de cómo podría ser el cálculo del precio
-        # Aquí deberás adaptarlo según tus necesidades específicas
-        # Por ejemplo, podrías tener una tabla de precios en la base de datos o una lógica más compleja
-        return 10.0  # Precio base de ejemplo
+
+        if self.usuario.tipo_usuario == 'J':
+            return 5.0
+        elif self.usuario.tipo_usuario == 'A':
+            return 15.0
+        elif self.usuario.tipo_usuario == 'I':
+            return 10.0
+        elif self.usuario.tipo_usuario == 'P':
+            return 7.5
+        elif self.usuario.tipo_usuario == 'B':
+            return 2.5
+        else:
+            return 10.0  # Precio base de ejemplo
 
