@@ -39,8 +39,14 @@ class Command(BaseCommand):
         
         # Generamos Localidades
         for _ in range(total*2):
-            numeracion = fake.unique.random_int(min=1, max=100000)
-            estado = 'L'
+            numeracion = _
+            numero_aleatorio = random.randint(0, 99)
+
+            if numero_aleatorio < 10:
+                estado = 'D'                    
+                print("se ha deteriorado")
+            else:
+                estado = 'L'
             objeto = Localidad(numeracion=numeracion, estado=estado)
             objeto.save()
 
@@ -70,16 +76,14 @@ class Command(BaseCommand):
             objeto.save()
 
         # Generamos Eventos
-        nombres_eventos = ['Concierto', 'Teatro', 'Cine', 'Deportes', 'Festival', 'Circo', 'Conferencia', 'Exposición', 'Feria', 'Fiesta']
         for _ in range(int(total/2)):
             espectaculo = fake.random_element(Espectaculo.objects.all())
             recinto = fake.random_element(Recinto.objects.all())
-            nombre_evento =  fake.random_element(nombres_eventos) + f' en {recinto.nombre_recinto}'
+            nombre_evento =  espectaculo.nombre_espectaculo + f' en {recinto.nombre_recinto}'
             fecha_evento = fake.date_this_year(before_today=False, after_today=True)
             descripcion = fake.sentence()
-            recinto = fake.random_element(Recinto.objects.all())
-            espectaculo = fake.random_element(Espectaculo.objects.all())
-            objeto = Evento(nombre_evento=nombre_evento, fecha_evento=fecha_evento, descripcion=descripcion, recinto=recinto, espectaculo=espectaculo)
+            participantes = fake.name()
+            objeto = Evento(nombre_evento=nombre_evento, fecha_evento=fecha_evento, descripcion=descripcion, participantes=participantes, recinto=recinto, espectaculo=espectaculo)
             objeto.save()
 
         # # Generamos Reservas
@@ -91,21 +95,33 @@ class Command(BaseCommand):
         #     objeto.save()
 
         # Generamos LocalidadesOfertadas, asignando a cada localidad una grada y los distintos tipos de usuario
-        localidades_existentes = Localidad.objects.all()
+        localidades_seleccionadas = []
         tipos_usuario_existentes = Usuario.objects.all()
         gradas_existentes = Grada.objects.all()
+        # TODO: Check aforo
         for grada in gradas_existentes:
-            # Cogemos un 12.5% de las localidades para cada tipo de usuario de forma aleatoria y única
-            localidades_muestra = self.obtener_muestra_aleatoria(localidades_existentes, 12.5)
             recinto = fake.random_element(Recinto.objects.all())
-            for localidad in localidades_muestra:
-                for usuario in tipos_usuario_existentes:
-                    localidad = localidad
-                    usuario = usuario
-                    # Reserva no asignada
-                    reserva = None
-                    objeto = LocalidadesOfertadas(grada=grada, localidad=localidad, usuario=usuario, recinto=recinto, reserva=reserva)
-                    objeto.save()
+            localidades_disponibles = list(Localidad.objects.exclude(numeracion__in=[localidad.numeracion for localidad in localidades_seleccionadas]))
+
+            if len(localidades_disponibles) > 0:
+                for localidad in localidades_disponibles[:5]:
+                    localidades_seleccionadas.append(localidad)
+                    if localidad.estado != 'D':
+                        for usuario in tipos_usuario_existentes:
+                            localidad_to_offer = localidad
+                            usuario = usuario
+                            # Reserva no asignada
+                            reserva = None
+                            objeto = LocalidadesOfertadas(grada=grada, localidad=localidad_to_offer, usuario=usuario, recinto=recinto, reserva=reserva)
+                            objeto.save()
+                    
+            else:
+                break
+
+            
+
+
+
 
 
 
