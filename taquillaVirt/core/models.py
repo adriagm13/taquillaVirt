@@ -2,17 +2,17 @@ from django.db import models
 
 
 class Espectaculo(models.Model):
-    nombre_espectaculo = models.CharField(max_length=100, primary_key=True)
+    nombre_espectaculo = models.CharField(max_length=255, primary_key=True)
     descripcion = models.TextField()
-    productor = models.CharField(max_length=100)
+    productor = models.CharField(max_length=255)
 
 class Recinto(models.Model):
-    nombre_recinto = models.CharField(max_length=100, primary_key=True)
-    direccion = models.CharField(max_length=200)
+    nombre_recinto = models.CharField(max_length=255, primary_key=True)
+    direccion = models.CharField(max_length=255)
 
     
 class Evento(models.Model):
-    nombre_evento = models.CharField(max_length=100)
+    nombre_evento = models.CharField(max_length=516)
     fecha_evento = models.DateField()
     descripcion = models.TextField()
     participantes = models.TextField()
@@ -24,16 +24,17 @@ class Evento(models.Model):
 
 
 class Grada(models.Model):
-    nombre_grada = models.CharField(max_length=100, primary_key=True)
+    nombre_grada = models.CharField(max_length=255, primary_key=True)
     aforo = models.IntegerField()
 
 class Localidad(models.Model):
-    numeracion = models.CharField(max_length=100, primary_key=True)
+    numeracion = models.CharField(max_length=255, primary_key=True)
 
     ESTADO_CHOICES = [
-        ('D', 'Disponible'),
+        ('L', 'Libre'),
         ('R', 'Reservada'),
-        ('V', 'Vendida'),
+        ('P', 'Pre-reservada'),
+        ('D', 'Deteriorada'),
     ]
     estado = models.CharField(max_length=1, choices=ESTADO_CHOICES)
 
@@ -68,14 +69,14 @@ class Usuario(models.Model):
 
 class Cliente(models.Model):
     id_cliente = models.AutoField(primary_key=True)
-    nombre = models.CharField(max_length=100)
-    apellido = models.CharField(max_length=100)
-    direccion = models.CharField(max_length=200)
-    ciudad = models.CharField(max_length=100)
+    nombre = models.CharField(max_length=255)
+    apellido = models.CharField(max_length=255)
+    direccion = models.CharField(max_length=255)
+    ciudad = models.CharField(max_length=255)
     codigo_postal = models.CharField(max_length=10)
-    telefono = models.CharField(max_length=15)
+    telefono = models.CharField()
     email = models.EmailField()
-    datos_tarjeta = models.CharField(max_length=100)
+    datos_tarjeta = models.CharField(max_length=255)
 
 class Reserva(models.Model):
     id_reserva = models.AutoField(primary_key=True)
@@ -86,16 +87,18 @@ class Reserva(models.Model):
         ('Transferencia', 'Transferencia bancaria'),
         ('Paypal', 'PayPal'),
         ('Efectivo', 'Pago en efectivo'),
-        # Añade más opciones según sea necesario
+        ('Ninguno', 'Sin especificar')
     ]
-    metodo_pago = models.CharField(max_length=20, choices=METODO_PAGO_CHOICES)
+    metodo_pago = models.CharField(max_length=30, choices=METODO_PAGO_CHOICES)
+    pago_efectuado = models.BooleanField(default=False)
 
 class LocalidadesOfertadas(models.Model):
     grada = models.ForeignKey(Grada, on_delete=models.CASCADE)
     localidad = models.ForeignKey(Localidad, on_delete=models.CASCADE)
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
-    precio = models.DecimalField(max_digits=5, decimal_places=2)
-    reserva = models.ForeignKey(Reserva, on_delete=models.CASCADE) 
+    recinto = models.ForeignKey(Recinto, on_delete=models.CASCADE, default=None)
+    precio = models.DecimalField(max_digits=9, decimal_places=2)
+    reserva = models.ForeignKey(Reserva, on_delete=models.CASCADE, default=None, null=True) 
     
     class Meta:
             constraints = [
@@ -120,4 +123,7 @@ class LocalidadesOfertadas(models.Model):
             return 2.5
         else:
             return 10.0  # Precio base de ejemplo
+        
+    def __str__(self) -> str:
+        return self.localidad.numeracion
 

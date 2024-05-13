@@ -1,3 +1,5 @@
+import random
+from typing import Collection
 from django.core.management.base import BaseCommand
 from faker import Faker
 from core.models import * 
@@ -6,7 +8,7 @@ class Command(BaseCommand):
     help = 'Genera datos ficticios y los inserta en la base de datos'
 
     def add_arguments(self, parser):
-        parser.add_argument('total', type=int, help='Número total de registros a generar')
+        parser.add_argument('--total', type=int, help='Número total de registros a generar')
 
     def handle(self, *args, **kwargs):
         total = kwargs['total']
@@ -38,7 +40,7 @@ class Command(BaseCommand):
         # Generamos Localidades
         for _ in range(total*2):
             numeracion = fake.unique.random_int(min=1, max=100000)
-            estado = 'D'
+            estado = 'L'
             objeto = Localidad(numeracion=numeracion, estado=estado)
             objeto.save()
 
@@ -68,8 +70,11 @@ class Command(BaseCommand):
             objeto.save()
 
         # Generamos Eventos
-        for _ in range(total):
-            nombre_evento = f'{espectaculo.nombre_espectaculo} en {recinto.nombre_recinto}'
+        nombres_eventos = ['Concierto', 'Teatro', 'Cine', 'Deportes', 'Festival', 'Circo', 'Conferencia', 'Exposición', 'Feria', 'Fiesta']
+        for _ in range(int(total/2)):
+            espectaculo = fake.random_element(Espectaculo.objects.all())
+            recinto = fake.random_element(Recinto.objects.all())
+            nombre_evento =  fake.random_element(nombres_eventos) + f' en {recinto.nombre_recinto}'
             fecha_evento = fake.date_this_year(before_today=False, after_today=True)
             descripcion = fake.sentence()
             recinto = fake.random_element(Recinto.objects.all())
@@ -89,16 +94,28 @@ class Command(BaseCommand):
         localidades_existentes = Localidad.objects.all()
         tipos_usuario_existentes = Usuario.objects.all()
         gradas_existentes = Grada.objects.all()
-        for localidad in localidades_existentes:
-            grada = fake.random_element(gradas_existentes)
-            for usuario in tipos_usuario_existentes:
-                localidad = localidad
-                usuario = usuario
-                # Reserva no asignada
-                reserva = None
-                objeto = LocalidadesOfertadas(grada=grada, localidad=localidad, usuario=usuario, reserva=reserva)
-                objeto.save()
+        for grada in gradas_existentes:
+            # Cogemos un 12.5% de las localidades para cada tipo de usuario de forma aleatoria y única
+            localidades_muestra = self.obtener_muestra_aleatoria(localidades_existentes, 12.5)
+            recinto = fake.random_element(Recinto.objects.all())
+            for localidad in localidades_muestra:
+                for usuario in tipos_usuario_existentes:
+                    localidad = localidad
+                    usuario = usuario
+                    # Reserva no asignada
+                    reserva = None
+                    objeto = LocalidadesOfertadas(grada=grada, localidad=localidad, usuario=usuario, recinto=recinto, reserva=reserva)
+                    objeto.save()
 
 
 
-        self.stdout.write(self.style.SUCCESS(f'Se han generado y guardado {total} registros en la base de datos'))
+        self.stdout.write(self.style.SUCCESS(f'Se han generado y guardado {total} clientes, y x2 localidades, en la base de datos'))
+
+    def obtener_muestra_aleatoria(self, elementos, porcentaje):
+        elementos = list(elementos)
+        num_elementos_muestra = int(len(elementos) * (porcentaje / 100))
+
+        # Seleccionar una muestra aleatoria de elementos
+        muestra_aleatoria = random.sample(elementos, num_elementos_muestra)
+
+        return muestra_aleatoria

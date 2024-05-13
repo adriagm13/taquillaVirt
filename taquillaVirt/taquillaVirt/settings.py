@@ -25,7 +25,11 @@ SECRET_KEY = 'django-insecure-hq-!178csn=(nsof=i%0!@(_mn96w(+*89o*mgu63mq#h+u1c_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    # Added allowed hosts
+    'localhost',
+    '127.0.0.1'
+]
 
 
 # Application definition
@@ -48,6 +52,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
 ]
 
 ROOT_URLCONF = 'taquillaVirt.urls'
